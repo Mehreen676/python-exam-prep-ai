@@ -35,7 +35,16 @@ export function SignUpView() {
       });
       const data = await r.json();
       if (!r.ok || !data.ok) {
-        setError(data?.error ?? 'Sign up failed. Please try again.');
+        // Common case on Vercel: DB not set up yet (SQLite doesn't persist
+        // in serverless). Show a helpful message instead of a scary error.
+        if (r.status === 503) {
+          setError(
+            'Sign-up is temporarily unavailable while we set up the database. ' +
+            'Until then, you can use all lessons, MCQs, flashcards, and mock exams without an account — your progress will be saved in this browser.'
+          );
+        } else {
+          setError(data?.error ?? 'Sign up failed. Please try again.');
+        }
         setLoading(false);
         return;
       }

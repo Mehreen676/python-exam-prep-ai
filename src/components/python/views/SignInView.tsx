@@ -33,7 +33,17 @@ export function SignInView() {
     });
 
     if (!res || res.error) {
-      setError('Invalid email or password. Please try again.');
+      // Common case on Vercel: API returns an error if the database isn't
+      // set up (SQLite placeholder doesn't work in serverless). Show a
+      // friendly message guiding the user to set up Postgres.
+      if (res?.status === 503 || res?.error === 'Configuration') {
+        setError(
+          'Sign-in is temporarily unavailable. The database is being set up. ' +
+          'Until then, you can use all lessons, MCQs, flashcards, and mock exams without signing in — your progress will be saved in this browser.'
+        );
+      } else {
+        setError('Invalid email or password. Please try again.');
+      }
       setLoading(false);
       return;
     }
