@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { courseContent } from '@/lib/python-course/content';
 import { useNav, useProgress } from '@/lib/python-course/store';
 import { TopNav } from '@/components/python/TopNav';
@@ -18,8 +17,6 @@ import { ExamResultsView } from '@/components/python/views/ExamResultsView';
 import { AnalyticsView } from '@/components/python/views/AnalyticsView';
 import { SettingsView } from '@/components/python/views/SettingsView';
 import { AdminView } from '@/components/python/views/AdminView';
-import { SignInView } from '@/components/python/views/SignInView';
-import { SignUpView } from '@/components/python/views/SignUpView';
 import { ProfileView } from '@/components/python/views/ProfileView';
 import { Footer } from '@/components/python/Footer';
 import { TutorChat } from '@/components/python/TutorChat';
@@ -29,10 +26,6 @@ export function AppShell() {
   const activeChapter = useNav((s) => s.activeChapter);
   const lastExamId = useNav((s) => s.lastExamId);
   const prefs = useProgress((s) => s.preferences);
-  const hydrateFromServer = useProgress((s) => s.hydrateFromServer);
-  const setCloudHydrated = useProgress((s) => s.setCloudHydrated);
-  const cloudHydrated = useProgress((s) => s.cloudHydrated);
-  const { data: session, status } = useSession();
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -40,30 +33,6 @@ export function AppShell() {
     const id = requestAnimationFrame(() => setMounted(true));
     return () => cancelAnimationFrame(id);
   }, []);
-
-  // On first mount, if the user is signed in, hydrate the store from the server.
-  useEffect(() => {
-    if (!mounted) return;
-    if (status !== 'authenticated' || !session?.user) return;
-    if (cloudHydrated) return;
-    (async () => {
-      try {
-        const r = await fetch('/api/progress');
-        if (r.ok) {
-          const data = await r.json();
-          if (data?.ok) {
-            hydrateFromServer(data.progress);
-          } else {
-            setCloudHydrated(true);
-          }
-        } else {
-          setCloudHydrated(true);
-        }
-      } catch {
-        setCloudHydrated(true);
-      }
-    })();
-  }, [mounted, status, session, cloudHydrated, hydrateFromServer, setCloudHydrated]);
 
   // Apply theme on pref change
   useEffect(() => {
@@ -109,8 +78,6 @@ export function AppShell() {
         {view === 'analytics' && <AnalyticsView />}
         {view === 'settings' && <SettingsView />}
         {view === 'admin' && <AdminView />}
-        {view === 'signin' && <SignInView />}
-        {view === 'signup' && <SignUpView />}
         {view === 'profile' && <ProfileView />}
       </main>
       <Footer />

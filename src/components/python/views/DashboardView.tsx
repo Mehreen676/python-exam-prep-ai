@@ -31,6 +31,7 @@ import { AdBanner } from '@/components/python/AdBanner';
 export function DashboardView() {
   const go = useNav((s) => s.go);
   const progress = useProgress();
+  const username = useProgress((s) => s.username);
   const resetAll = useProgress((s) => s.resetAllProgress);
 
   const chaptersDone = selectChapterCompletion(progress);
@@ -52,7 +53,9 @@ export function DashboardView() {
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-2xl">Welcome back, learner</CardTitle>
+            <CardTitle className="text-2xl">
+              Welcome{username ? `, ${username}` : ' back'}!
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">

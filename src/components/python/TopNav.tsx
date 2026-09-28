@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn, signOut, useSession } from 'next-auth/react';
-import { LogIn, LogOut, Menu, User as UserIcon, X } from 'lucide-react';
+import { Menu, User as UserIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNav } from '@/lib/python-course/store';
+import { useNav, useProgress } from '@/lib/python-course/store';
 import type { ViewId } from '@/lib/python-course/store';
 import { cn } from '@/lib/utils';
 
@@ -22,10 +21,9 @@ export function TopNav() {
   const view = useNav((s) => s.view);
   const go = useNav((s) => s.go);
   const [open, setOpen] = useState(false);
-  const { data: session, status } = useSession();
-  const isAuthed = status === 'authenticated' && !!session?.user;
-  const u = session?.user as { name?: string | null; email?: string | null } | undefined;
-  const displayName = u?.name ?? (u?.email?.split('@')[0]) ?? 'Account';
+  const username = useProgress((s) => s.username);
+
+  const displayName = username?.trim() ? username.trim() : null;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -58,29 +56,20 @@ export function TopNav() {
             Admin
           </Button>
 
-          {/* Auth area */}
-          {isAuthed ? (
-            <Button
-              variant={view === 'profile' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => go('profile')}
-              className="ml-1 gap-2"
-            >
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                {displayName[0]?.toUpperCase()}
-              </span>
-              <span className="hidden lg:inline max-w-24 truncate">{displayName}</span>
-            </Button>
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" onClick={() => go('signin')} className="gap-1">
-                <LogIn className="h-4 w-4" /> Sign in
-              </Button>
-              <Button size="sm" onClick={() => go('signup')} className="gap-1">
-                <UserIcon className="h-4 w-4" /> Sign up
-              </Button>
-            </>
-          )}
+          {/* Username / Set Name button — no auth */}
+          <Button
+            variant={view === 'profile' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => go('profile')}
+            className="ml-1 gap-2"
+          >
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+              {displayName ? displayName[0]?.toUpperCase() : <UserIcon className="h-3.5 w-3.5" />}
+            </span>
+            <span className="hidden lg:inline max-w-24 truncate">
+              {displayName ?? 'Set name'}
+            </span>
+          </Button>
         </nav>
 
         <button
@@ -121,57 +110,17 @@ export function TopNav() {
             >
               Admin
             </Button>
-
-            {isAuthed ? (
-              <>
-                <Button
-                  variant={view === 'profile' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="justify-start gap-1"
-                  onClick={() => {
-                    go('profile');
-                    setOpen(false);
-                  }}
-                >
-                  <UserIcon className="h-4 w-4" /> {displayName}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="justify-start gap-1 text-destructive"
-                  onClick={() => {
-                    setOpen(false);
-                    signOut({ callbackUrl: '/' });
-                  }}
-                >
-                  <LogOut className="h-4 w-4" /> Sign out
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="justify-start gap-1"
-                  onClick={() => {
-                    go('signin');
-                    setOpen(false);
-                  }}
-                >
-                  <LogIn className="h-4 w-4" /> Sign in
-                </Button>
-                <Button
-                  size="sm"
-                  className="justify-start gap-1"
-                  onClick={() => {
-                    go('signup');
-                    setOpen(false);
-                  }}
-                >
-                  <UserIcon className="h-4 w-4" /> Sign up
-                </Button>
-              </>
-            )}
+            <Button
+              variant={view === 'profile' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="justify-start gap-1"
+              onClick={() => {
+                go('profile');
+                setOpen(false);
+              }}
+            >
+              <UserIcon className="h-4 w-4" /> {displayName ?? 'Set name'}
+            </Button>
           </div>
         </nav>
       )}

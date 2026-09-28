@@ -195,7 +195,6 @@ export interface ProgressState {
   };
   // ISO date strings for each day the user answered at least one question
   activeDays: string[];
-  // True when the store has been hydrated from the server (signed-in user).
-  // False when signed-out or before hydration has finished.
-  cloudHydrated?: boolean;
+  // Optional username (no auth — stored locally only)
+  username?: string | null;
 }

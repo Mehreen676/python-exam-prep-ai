@@ -29,8 +29,6 @@ export type ViewId =
   | 'analytics'
   | 'settings'
   | 'admin'
-  | 'signin'
-  | 'signup'
   | 'profile';
 
 interface NavState {
@@ -96,16 +94,9 @@ interface ProgressStore extends ProgressState {
   setPreferences: (p: Partial<Preferences>) => void;
   // reset everything
   resetAllProgress: () => void;
-  // --- auth-aware cloud sync (no-op when signed out) ---
-  // True after we have hydrated the store from the server on sign-in.
-  // False when signed out or before hydration has finished.
-  cloudHydrated: boolean;
-  setCloudHydrated: (v: boolean) => void;
-  // Merge a server payload into the local state (used by GET /api/progress).
-  hydrateFromServer: (data: Partial<ProgressState>) => void;
-  // Push the local state to the server (used after sign-in and on writes).
-  // Returns true if the push succeeded.
-  syncToServer: () => Promise<boolean>;
+  // username (stored locally — no signup required)
+  username: string | null;
+  setUsername: (name: string | null) => void;
 }
 
 function todayStr(): string {
@@ -128,7 +119,7 @@ export const useProgress = create<ProgressStore>()(
       ...EMPTY_PROGRESS,
       preferences: DEFAULT_PREFS,
 
-      toggleChapterCompleted: (n) => {
+      toggleChapterCompleted: (n) =>
         set((s) => {
           const cur = s.chapters[n] ?? { completed: false, markedAt: null, slidesViewed: 0, videosWatched: 0 };
           const completed = !cur.completed;
@@ -138,11 +129,9 @@ export const useProgress = create<ProgressStore>()(
               [n]: { ...cur, completed, markedAt: completed ? Date.now() : null },
             },
           };
-        });
-        void get().syncToServer();
-      },
+        }),
 
-      markChapterCompleted: (n) => {
+      markChapterCompleted: (n) =>
         set((s) => {
           const cur = s.chapters[n] ?? { completed: false, markedAt: null, slidesViewed: 0, videosWatched: 0 };
           return {
@@ -151,11 +140,9 @@ export const useProgress = create<ProgressStore>()(
               [n]: { ...cur, completed: true, markedAt: Date.now() },
             },
           };
-        });
-        void get().syncToServer();
-      },
+        }),
 
-      incSlidesViewed: (n, by = 1) => {
+      incSlidesViewed: (n, by = 1) =>
         set((s) => {
           const cur = s.chapters[n] ?? { completed: false, markedAt: null, slidesViewed: 0, videosWatched: 0 };
           return {
@@ -164,12 +151,9 @@ export const useProgress = create<ProgressStore>()(
               [n]: { ...cur, slidesViewed: cur.slidesViewed + by },
             },
           };
-        });
-        // Slide views are frequent — don't sync on every one. Caller can sync
-        // later in batches if needed.
-      },
+        }),
 
-      incVideosWatched: (n) => {
+      incVideosWatched: (n) =>
         set((s) => {
           const cur = s.chapters[n] ?? { completed: false, markedAt: null, slidesViewed: 0, videosWatched: 0 };
           return {
@@ -178,23 +162,16 @@ export const useProgress = create<ProgressStore>()(
               [n]: { ...cur, videosWatched: cur.videosWatched + 1 },
             },
           };
-        });
-        void get().syncToServer();
-      },
+        }),
 
-      setFlashcardStatus: (id, status) => {
+      setFlashcardStatus: (id, status) =>
         set((s) => ({
           flashcards: { ...s.flashcards, [id]: status } as FlashcardProgress,
-        }));
-        void get().syncToServer();
-      },
+        })),
 
-      resetFlashcards: () => {
-        set({ flashcards: {} });
-        void get().syncToServer();
-      },
+      resetFlashcards: () => set({ flashcards: {} }),
 
-      recordAttempt: (rec) => {
+      recordAttempt: (rec) =>
         set((s) => {
           const today = todayStr();
           const last = s.streak.lastActiveDay;
@@ -217,14 +194,10 @@ export const useProgress = create<ProgressStore>()(
             streak: nextStreak,
             activeDays,
           };
-        });
-        void get().syncToServer();
-      },
+        }),
 
-      recordExam: (exam) => {
-        set((s) => ({ exams: [exam, ...s.exams].slice(0, 100) }));
-        void get().syncToServer();
-      },
+      recordExam: (exam) =>
+        set((s) => ({ exams: [exam, ...s.exams].slice(0, 100) })),
 
       setPreferences: (p) =>
         set((s) => ({ preferences: { ...s.preferences, ...p } })),
@@ -233,95 +206,12 @@ export const useProgress = create<ProgressStore>()(
         set(() => ({
           ...EMPTY_PROGRESS,
           preferences: get().preferences,
-          cloudHydrated: false,
+          username: get().username,
         })),
 
-      // --- cloud sync (no-op until cloudHydrated is true) ---
-      cloudHydrated: false,
-      setCloudHydrated: (v) => set(() => ({ cloudHydrated: v })),
-
-      hydrateFromServer: (data) =>
-        set((s) => {
-          // Merge — prefer the server's record (cloud is the source of truth
-          // for an authenticated user). Keep local streak activeDays only if
-          // the server's copy is older.
-          const serverChapters = data.chapters ?? {};
-          const mergedChapters: typeof s.chapters = { ...s.chapters };
-          for (const [k, v] of Object.entries(serverChapters)) {
-            const kn = Number(k);
-            const cur = mergedChapters[kn];
-            const srv = v as { completed: boolean; markedAt: number | null; slidesViewed: number; videosWatched: number };
-            // Use whichever record has a higher slidesViewed count (a rough
-            // "more progress" heuristic). Falls back to server when local
-            // has no record.
-            if (!cur || srv.slidesViewed >= cur.slidesViewed) {
-              mergedChapters[kn] = srv;
-            } else {
-              mergedChapters[kn] = cur;
-            }
-          }
-          const serverAttempts = data.attempts ?? [];
-          // Concatenate server attempts with any local ones we don't already
-          // have. Deduplicate by (mcqId + timestamp + selected).
-          const seen = new Set(
-            serverAttempts.map((a) => `${a.mcqId}|${a.timestamp}|${a.selected}`)
-          );
-          const localOnly = s.attempts.filter(
-            (a) => !seen.has(`${a.mcqId}|${a.timestamp}|${a.selected}`)
-          );
-          const mergedAttempts = [...serverAttempts, ...localOnly].slice(-5000);
-
-          const serverExams = data.exams ?? [];
-          const examSeen = new Set(serverExams.map((e) => e.id));
-          const localExams = s.exams.filter((e) => !examSeen.has(e.id));
-          const mergedExams = [...serverExams, ...localExams]
-            .sort((a, b) => b.finishedAt - a.finishedAt)
-            .slice(0, 100);
-
-          const serverFlashcards = data.flashcards ?? {};
-          const mergedFlashcards = { ...s.flashcards, ...serverFlashcards };
-
-          const serverStreak = data.streak ?? s.streak;
-          const mergedStreak =
-            serverStreak.longest >= s.streak.longest ? serverStreak : s.streak;
-
-          const serverActiveDays = data.activeDays ?? [];
-          const mergedActiveDays = Array.from(
-            new Set([...s.activeDays, ...serverActiveDays])
-          );
-
-          return {
-            chapters: mergedChapters,
-            attempts: mergedAttempts,
-            exams: mergedExams,
-            flashcards: mergedFlashcards,
-            streak: mergedStreak,
-            activeDays: mergedActiveDays,
-            cloudHydrated: true,
-          };
-        }),
-
-      syncToServer: async () => {
-        // No-op if not hydrated (we don't push stale localStorage over the
-        // server's record). Component code calls this only after sign-in.
-        if (!get().cloudHydrated) return false;
-        try {
-          const s = get();
-          const res = await fetch('/api/progress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chapters: s.chapters,
-              attempts: s.attempts.slice(-200), // last 200 only to keep payload reasonable
-              exams: s.exams.slice(0, 20),
-              flashcards: s.flashcards,
-            }),
-          });
-          return res.ok;
-        } catch {
-          return false;
-        }
-      },
+      // --- simple username (no auth) ---
+      username: null,
+      setUsername: (name) => set({ username: name }),
     }),
     {
       name: 'python-exam-prep/progress',
@@ -360,10 +250,7 @@ export const useProgress = create<ProgressStore>()(
           exams: Array.isArray(p.exams) ? p.exams : [],
           streak: p.streak ?? current.streak,
           activeDays: Array.isArray(p.activeDays) ? p.activeDays : [],
-          // Never persist cloudHydrated from localStorage — always start as
-          // false on reload; the AppShell effect sets it after a successful
-          // /api/progress GET.
-          cloudHydrated: false,
+          username: typeof p.username === 'string' ? p.username : null,
         };
       },
     }
