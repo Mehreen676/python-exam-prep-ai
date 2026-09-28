@@ -61,7 +61,7 @@ const ADSTERRA_KEYS: Record<AdBannerProps['slot'], string> = {
 };
 
 // Monetag zone IDs — get these from your Monetag dashboard.
-// Format: numeric string (e.g., "1234567"). One zone per slot location.
+// Format: numeric string (e.g., "288457"). One zone per slot location.
 const MONETAG_ZONES: Record<AdBannerProps['slot'], string> = {
   'landing-top': process.env.NEXT_PUBLIC_MONETAG_ZONE_LANDING_TOP ?? '',
   'landing-sidebar': process.env.NEXT_PUBLIC_MONETAG_ZONE_LANDING_SIDEBAR ?? '',
@@ -71,6 +71,13 @@ const MONETAG_ZONES: Record<AdBannerProps['slot'], string> = {
   'practice-sidebar': process.env.NEXT_PUBLIC_MONETAG_ZONE_PRACTICE_SIDEBAR ?? '',
   'flashcards-bottom': process.env.NEXT_PUBLIC_MONETAG_ZONE_FLASHCARDS_BOTTOM ?? '',
 };
+
+// Monetag's ad-serving script URL. This is the same for ALL your zones —
+// only the `data-zone` attribute differs per slot. Monetag gives you this
+// URL when you create your first ad zone (it's tied to your account ID
+// segment, e.g., the "/88/" in https://quge5.com/88/tag.min.js).
+const MONETAG_SCRIPT_URL =
+  process.env.NEXT_PUBLIC_MONETAG_SCRIPT_URL ?? 'https://quge5.com/88/tag.min.js';
 
 declare global {
   interface Window {
@@ -180,10 +187,12 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
   }
 
   // ---- Monetag ----
-  // We use Monetag's iframe format instead of the JavaScript SDK to avoid
-  // Vercel's security scanner flagging the obfuscated ad-serving script
-  // (which was causing build/runtime warnings). The iframe serves the same
-  // ad content but is sandboxed and won't trigger any security warnings.
+  // Renders Monetag's actual ad-serving script tag. The script URL is the
+  // same for all your zones (one per Monetag account); only the `data-zone`
+  // attribute differs per slot. We add the script as a normal React child
+  // — React 19 supports `<script>` tags in JSX directly. Monetag's SDK
+  // detects the data-zone attribute and renders the appropriate ad creative
+  // into the parent container.
   if (AD_NETWORK === 'monetag') {
     const zoneId = MONETAG_ZONES[slot];
     if (!zoneId) {
@@ -197,26 +206,19 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
         </div>
       );
     }
-    // Monetag serves ad creative into an iframe — sandboxed and safe.
-    const height = format === 'horizontal' ? 90 : 250;
     return (
       <div className={cn('flex flex-col gap-1', className)} role="complementary" aria-label="Advertisement">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60">{label}</div>
-        <iframe
-          src={`https://www.monetag.com/tag/${zoneId}`}
-          style={{
-            width: '100%',
-            height: `${height}px`,
-            border: 'none',
-            borderRadius: '0.5rem',
-            display: 'block',
-          }}
-          title="Advertisement"
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          allowFullScreen={false}
-          scrolling="no"
-        />
+        <div className="monetag-slot min-h-[90px]">
+          {/* Monetag's standard embed code — same URL for all your zones,
+              different data-zone per slot. */}
+          <script
+            src={MONETAG_SCRIPT_URL}
+            data-zone={zoneId}
+            data-cfasync="false"
+            async
+          />
+        </div>
       </div>
     );
   }
