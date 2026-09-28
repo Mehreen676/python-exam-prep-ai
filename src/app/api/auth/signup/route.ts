@@ -72,12 +72,10 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error.';
     console.error('[signup] DB error:', message);
-    // Most likely cause: SQLite path can't be written on Vercel serverless,
-    // or DATABASE_URL points to a placeholder. The fix is to set up
-    // Vercel Postgres and update DATABASE_URL.
+    // Surface the underlying error to the response so it's debuggable
+    // from the browser DevTools network tab.
     return unavailable(
-      'Sign-up is unavailable because the database is not configured. ' +
-      'Please set up Vercel Postgres and update DATABASE_URL — see README.'
+      'Database error during sign-up. Details: ' + message
     );
   }
 }

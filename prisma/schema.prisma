@@ -6,12 +6,22 @@ generator client {
 }
 
 datasource db {
-  // Production: Vercel Postgres (auto-creates POSTGRES_URL env var when you
-  // connect the database to your project).
-  // Local dev: copy the same connection string into your local .env as
-  // POSTGRES_URL=postgres://...
-  provider = "postgresql"
-  url      = env("POSTGRES_URL")
+  // Production: Vercel Postgres. When you connect a Postgres database to
+  // your project on Vercel, it auto-creates these env vars:
+  //   POSTGRES_PRISMA_URL         — pooled connection (for runtime)
+  //   POSTGRES_URL_NON_POOLING    — direct connection (for migrations)
+  //
+  // Prisma needs both:
+  //   - url       → used by Prisma Client at runtime (must be pooled for
+  //                 serverless functions to avoid exhausting the connection
+  //                 pool across many concurrent invocations).
+  //   - directUrl → used by prisma migrate / prisma db push (must NOT be
+  //                 pooled because migrations need a direct connection).
+  //
+  // Local dev: copy both values into your .env from the Vercel dashboard.
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 // ---------------------------------------------------------------------------
