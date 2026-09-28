@@ -60,24 +60,32 @@ const ADSTERRA_KEYS: Record<AdBannerProps['slot'], string> = {
   'flashcards-bottom': process.env.NEXT_PUBLIC_ADSTERRA_KEY_FLASHCARDS_BOTTOM ?? '',
 };
 
-// Monetag zone IDs — get these from your Monetag dashboard.
-// Format: numeric string (e.g., "288457"). One zone per slot location.
-const MONETAG_ZONES: Record<AdBannerProps['slot'], string> = {
-  'landing-top': process.env.NEXT_PUBLIC_MONETAG_ZONE_LANDING_TOP ?? '',
-  'landing-sidebar': process.env.NEXT_PUBLIC_MONETAG_ZONE_LANDING_SIDEBAR ?? '',
-  'chapter-bottom': process.env.NEXT_PUBLIC_MONETAG_ZONE_CHAPTER_BOTTOM ?? '',
-  'dashboard-sidebar': process.env.NEXT_PUBLIC_MONETAG_ZONE_DASHBOARD_SIDEBAR ?? '',
-  'exam-results-bottom': process.env.NEXT_PUBLIC_MONETAG_ZONE_EXAM_BOTTOM ?? '',
-  'practice-sidebar': process.env.NEXT_PUBLIC_MONETAG_ZONE_PRACTICE_SIDEBAR ?? '',
-  'flashcards-bottom': process.env.NEXT_PUBLIC_MONETAG_ZONE_FLASHCARDS_BOTTOM ?? '',
+// Monetag per-slot configuration. Each env var should be set to
+// "scriptURL,zoneID" — for example:
+//   NEXT_PUBLIC_MONETAG_LANDING_TOP=https://nap5k.com/tag.min.js,11916702
+// Monetag assigns a different CDN URL per ad zone (nap5k.com, al5sm.com,
+// n6wxm.com, etc.), so each slot needs its own script URL + zone ID pair.
+const MONETAG_ADS: Record<AdBannerProps['slot'], string> = {
+  'landing-top': process.env.NEXT_PUBLIC_MONETAG_LANDING_TOP ?? '',
+  'landing-sidebar': process.env.NEXT_PUBLIC_MONETAG_LANDING_SIDEBAR ?? '',
+  'chapter-bottom': process.env.NEXT_PUBLIC_MONETAG_CHAPTER_BOTTOM ?? '',
+  'dashboard-sidebar': process.env.NEXT_PUBLIC_MONETAG_DASHBOARD_SIDEBAR ?? '',
+  'exam-results-bottom': process.env.NEXT_PUBLIC_MONETAG_EXAM_BOTTOM ?? '',
+  'practice-sidebar': process.env.NEXT_PUBLIC_MONETAG_PRACTICE_SIDEBAR ?? '',
+  'flashcards-bottom': process.env.NEXT_PUBLIC_MONETAG_FLASHCARDS_BOTTOM ?? '',
 };
 
-// Monetag's ad-serving script URL. This is the same for ALL your zones —
-// only the `data-zone` attribute differs per slot. Monetag gives you this
-// URL when you create your first ad zone (it's tied to your account ID
-// segment, e.g., the "/88/" in https://quge5.com/88/tag.min.js).
-const MONETAG_SCRIPT_URL =
-  process.env.NEXT_PUBLIC_MONETAG_SCRIPT_URL ?? 'https://quge5.com/88/tag.min.js';
+// Parse "scriptURL,zoneID" → { scriptUrl, zoneId }
+function parseMonetagAd(value: string): { scriptUrl: string; zoneId: string } | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const idx = trimmed.lastIndexOf(',');
+  if (idx === -1) return null;
+  const scriptUrl = trimmed.slice(0, idx).trim();
+  const zoneId = trimmed.slice(idx + 1).trim();
+  if (!scriptUrl || !zoneId) return null;
+  return { scriptUrl, zoneId };
+}
 
 declare global {
   interface Window {
@@ -187,22 +195,18 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
   }
 
   // ---- Monetag ----
-  // Renders Monetag's actual ad-serving script tag. The script URL is the
-  // same for all your zones (one per Monetag account); only the `data-zone`
-  // attribute differs per slot. We add the script as a normal React child
-  // — React 19 supports `<script>` tags in JSX directly. Monetag's SDK
-  // detects the data-zone attribute and renders the appropriate ad creative
-  // into the parent container.
+  // Renders Monetag's actual ad-serving script tag. Each slot has its own
+  // script URL + zone ID pair (Monetag assigns different CDN URLs per zone).
   if (AD_NETWORK === 'monetag') {
-    const zoneId = MONETAG_ZONES[slot];
-    if (!zoneId) {
+    const parsed = parseMonetagAd(MONETAG_ADS[slot]);
+    if (!parsed) {
       return (
         <div
           className={cn('flex items-center justify-center rounded border border-dashed text-xs text-muted-foreground/60', className)}
           role="complementary"
           aria-label="Advertisement placeholder"
         >
-          Monetag zone not configured for: {slot}
+          Monetag ad not configured for: {slot}
         </div>
       );
     }
@@ -210,11 +214,9 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
       <div className={cn('flex flex-col gap-1', className)} role="complementary" aria-label="Advertisement">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60">{label}</div>
         <div className="monetag-slot min-h-[90px]">
-          {/* Monetag's standard embed code — same URL for all your zones,
-              different data-zone per slot. */}
           <script
-            src={MONETAG_SCRIPT_URL}
-            data-zone={zoneId}
+            src={parsed.scriptUrl}
+            data-zone={parsed.zoneId}
             data-cfasync="false"
             async
           />
