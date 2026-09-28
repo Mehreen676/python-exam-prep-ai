@@ -35,6 +35,12 @@ export const metadata: Metadata = {
   authors: [{ name: "Mehreen Zohair" }],
   creator: "Mehreen Zohair",
   publisher: "Mehreen Zohair",
+  // Monetag site-verification meta tag (registered by Mehreen Zohair).
+  // Monetag's crawler reads this to confirm we own the domain before they
+  // approve the site for ad serving.
+  other: {
+    monetag: "8ea8a3539a83b50bd682b77b8fd5c74e",
+  },
 };
 
 export default function RootLayout({
