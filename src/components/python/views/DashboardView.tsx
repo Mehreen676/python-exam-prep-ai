@@ -26,6 +26,7 @@ import {
   useNav,
   useProgress,
 } from '@/lib/python-course/store';
+import { AdBanner } from '@/components/python/AdBanner';
 
 export function DashboardView() {
   const go = useNav((s) => s.go);
@@ -214,6 +215,9 @@ export function DashboardView() {
             )}
           </CardContent>
         </Card>
+
+        {/* Sponsored sidebar ad */}
+        <AdBanner slot="dashboard-sidebar" />
       </section>
 
       {/* Quick access cards */}

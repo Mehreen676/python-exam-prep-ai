@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNav } from '@/lib/python-course/store';
 import { courseContent } from '@/lib/python-course/content';
+import { AdBanner } from '@/components/python/AdBanner';
 
 const FEATURES = [
   {
@@ -119,6 +120,11 @@ export function LandingView() {
             ))}
           </CardContent>
         </Card>
+      </section>
+
+      {/* Sponsored banner — supports AdSense or Adsterra via env vars */}
+      <section className="py-2">
+        <AdBanner slot="landing-top" format="horizontal" className="max-w-4xl mx-auto" />
       </section>
 
       {/* Features */}

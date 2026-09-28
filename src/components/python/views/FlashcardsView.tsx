@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { courseContent } from '@/lib/python-course/content';
 import { useNav, useProgress } from '@/lib/python-course/store';
+import { AdBanner } from '@/components/python/AdBanner';
 
 export function FlashcardsView() {
   const navChapter = useNav((s) => s.activeChapter);
@@ -177,6 +178,9 @@ export function FlashcardsView() {
           </div>
         </>
       )}
+
+      {/* Sponsored banner — shown after flashcards deck */}
+      <AdBanner slot="flashcards-bottom" />
     </div>
   );
 }

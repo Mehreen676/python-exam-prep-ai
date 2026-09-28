@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { CodeBlock } from '@/components/python/CodeBlock';
 import { MCQRunner } from '@/components/python/parts/MCQRunner';
+import { AdBanner } from '@/components/python/AdBanner';
 import { courseContent } from '@/lib/python-course/content';
 import type { Chapter } from '@/lib/python-course/types';
 import { useNav, useProgress } from '@/lib/python-course/store';
@@ -249,6 +250,11 @@ export function ChapterView({ chapter }: ChapterViewProps) {
         >
           Next →
         </Button>
+      </div>
+
+      {/* Sponsored banner — shown at the end of each chapter */}
+      <div className="pt-4">
+        <AdBanner slot="chapter-bottom" />
       </div>
     </div>
   );

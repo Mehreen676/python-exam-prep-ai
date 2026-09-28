@@ -18,6 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { CodeBlock } from '@/components/python/CodeBlock';
 import { courseContent } from '@/lib/python-course/content';
 import { useNav, useProgress } from '@/lib/python-course/store';
+import { AdBanner } from '@/components/python/AdBanner';
 
 interface ExamResultsViewProps {
   examId: string | null;
@@ -216,6 +217,9 @@ export function ExamResultsView({ examId }: ExamResultsViewProps) {
           <PenLine className="h-4 w-4" /> Take another exam
         </Button>
       </div>
+
+      {/* Sponsored banner — shown after exam results */}
+      <AdBanner slot="exam-results-bottom" />
     </div>
   );
 }

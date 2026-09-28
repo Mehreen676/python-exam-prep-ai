@@ -289,7 +289,111 @@ start.
 - **AI tutor not implemented** in the first version. The architecture is
   ready for it; nothing in the UI claims to use AI.
 
-## License
+## Ads / Monetization (optional)
+
+The app includes a flexible ad-banner system that supports both **Google
+AdSense** and **Adsterra**. Pick one network per environment — no code
+changes needed to switch.
+
+### How it works
+
+- One reusable component, `src/components/python/AdBanner.tsx`, renders an
+  ad slot for any of the 7 named locations on the site.
+- `src/components/python/AdProvider.tsx` loads the AdSense library once
+  (via Next.js `<Script>` with `strategy="afterInteractive"`) — only when
+  AdSense is the selected network. Adsterra loads per-slot, no global
+  script needed.
+- All configuration is via **public** env vars (no secrets) so they can
+  be safely committed to `.env.example` as placeholders.
+
+### Where ads appear
+
+| Slot name | Page | Format |
+|-----------|------|--------|
+| `landing-top` | Landing page (after hero) | Horizontal banner |
+| `landing-sidebar` | Landing page (right column) | Responsive block |
+| `chapter-bottom` | End of every chapter page | Responsive block |
+| `dashboard-sidebar` | Dashboard right column | Responsive block |
+| `exam-results-bottom` | After exam results page | Responsive block |
+| `practice-sidebar` | Practice page right column | Responsive block |
+| `flashcards-bottom` | After flashcard deck | Responsive block |
+
+When `NEXT_PUBLIC_AD_NETWORK=none` (default), the slots render a friendly
+placeholder box so you can see where ads will go without serving any.
+
+### Setup — AdSense (recommended long-term)
+
+1. Apply at <https://www.google.com/adsense> (requires a custom domain —
+   not `*.vercel.app`). Approval usually takes 1-7 days.
+2. Once approved, copy your Publisher ID (looks like
+   `ca-pub-1234567890123456`).
+3. In AdSense dashboard → My Ads → Ad units → New ad unit. Create one ad
+   unit for each of the 7 slot names. Copy each ad unit's slot ID
+   (10-digit number).
+4. Set these env vars in `.env` (local) and on Vercel:
+   ```
+   NEXT_PUBLIC_AD_NETWORK=adsense
+   NEXT_PUBLIC_ADSENSE_CLIENT=ca-pub-1234567890123456
+   NEXT_PUBLIC_ADSENSE_SLOT_LANDING_TOP=1111111111
+   NEXT_PUBLIC_ADSENSE_SLOT_LANDING_SIDEBAR=2222222222
+   NEXT_PUBLIC_ADSENSE_SLOT_CHAPTER_BOTTOM=3333333333
+   NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD_SIDEBAR=4444444444
+   NEXT_PUBLIC_ADSENSE_SLOT_EXAM_BOTTOM=5555555555
+   NEXT_PUBLIC_ADSENSE_SLOT_PRACTICE_SIDEBAR=6666666666
+   NEXT_PUBLIC_ADSENSE_SLOT_FLASHCARDS_BOTTOM=7777777777
+   ```
+5. Redeploy. Ads start serving within minutes (AdSense crawls your site
+   to learn content categories first).
+
+### Setup — Adsterra (fastest, instant approval)
+
+1. Sign up at <https://adsterra.com> (instant approval, works on
+   `*.vercel.app` subdomains too).
+2. Dashboard → Websites → Add website → Get ad code.
+3. For each of the 7 slots, create a separate placement (Banner / Native
+   Banner / Social Bar). Copy the **placement key** from the embed code
+   (the long alphanumeric string in the script URL).
+4. Set these env vars:
+   ```
+   NEXT_PUBLIC_AD_NETWORK=adsterra
+   NEXT_PUBLIC_ADSTERRA_KEY_LANDING_TOP=abc123def456...
+   NEXT_PUBLIC_ADSTERRA_KEY_LANDING_SIDEBAR=...
+   NEXT_PUBLIC_ADSTERRA_KEY_CHAPTER_BOTTOM=...
+   NEXT_PUBLIC_ADSTERRA_KEY_DASHBOARD_SIDEBAR=...
+   NEXT_PUBLIC_ADSTERRA_KEY_EXAM_BOTTOM=...
+   NEXT_PUBLIC_ADSTERRA_KEY_PRACTICE_SIDEBAR=...
+   NEXT_PUBLIC_ADSTERRA_KEY_FLASHCARDS_BOTTOM=...
+   ```
+5. Redeploy. Ads start serving immediately.
+
+### Which network should you use?
+
+| Criterion | AdSense | Adsterra |
+|-----------|---------|----------|
+| Approval time | 1-7 days | Instant |
+| Custom domain required | Yes | No |
+| RPM (revenue per 1000 views) | $1-5 (US/EU traffic) | $0.5-3 |
+| Minimum payout | $100 | $5-100 depending on method |
+| Payment methods | Wire, EFT, check | Crypto, PayPal, Wire, USDT |
+| Best for | Established sites with traffic | New sites testing monetization |
+
+**Recommendation**: Start with Adsterra (instant approval, no domain
+requirement, see income flow quickly). Switch to AdSense once you have a
+custom domain and steady traffic.
+
+### Hiding ads for premium users
+
+The `AdBanner` component reads `useSession()` (planned). To hide ads for
+logged-in users, wrap the render in a session check:
+
+```tsx
+const { data: session } = useSession();
+if (session?.user?.role === 'PREMIUM') return null; // hidden for premium users
+```
+
+Add a `tier` field to the User model and gate ads by it.
+
+
 
 This project is a study aid. Chapter titles and the syllabus ordering
 reference *A Smarter Way to Learn Python* by Mark Myers; all lesson text,
