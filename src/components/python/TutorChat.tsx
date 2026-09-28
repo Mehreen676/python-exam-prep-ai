@@ -118,7 +118,7 @@ export function TutorChat() {
         aria-label={open ? 'Close Mehru Tutor AI' : 'Open Mehru Tutor AI'}
         aria-expanded={open}
         className={cn(
-          'fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-1 ring-primary/30 transition-all hover:scale-105 hover:shadow-xl',
+          'fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lift ring-1 ring-primary/30 transition-all hover:scale-110 hover:rotate-3 active:scale-95',
           open && 'rotate-90'
         )}
       >
@@ -135,10 +135,10 @@ export function TutorChat() {
         <div
           role="dialog"
           aria-label="Mehru Tutor AI chat"
-          className="fixed bottom-24 right-5 z-50 w-[min(24rem,calc(100vw-2.5rem))] h-[min(34rem,calc(100vh-8rem))] flex flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden"
+          className="fixed bottom-24 right-5 z-50 w-[min(24rem,calc(100vw-2.5rem))] h-[min(34rem,calc(100vh-8rem))] flex flex-col rounded-3xl glass-strong shadow-lift border-gradient overflow-hidden animate-scale-in"
         >
           {/* Header */}
-          <div className="flex items-center justify-between gap-2 border-b bg-primary text-primary-foreground px-4 py-3">
+          <div className="flex items-center justify-between gap-2 border-b border-border/40 bg-gradient-to-br from-primary to-accent text-primary-foreground px-4 py-3">
             <div className="flex items-center gap-2 min-w-0">
               <Sparkles className="h-4 w-4 shrink-0" />
               <div className="min-w-0">

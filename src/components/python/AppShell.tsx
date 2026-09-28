@@ -20,6 +20,7 @@ import { AdminView } from '@/components/python/views/AdminView';
 import { ProfileView } from '@/components/python/views/ProfileView';
 import { Footer } from '@/components/python/Footer';
 import { TutorChat } from '@/components/python/TutorChat';
+import { AnimatedBackground } from '@/components/python/AnimatedBackground';
 
 export function AppShell() {
   const view = useNav((s) => s.view);
@@ -62,9 +63,10 @@ export function AppShell() {
     activeChapter != null ? courseContent.chapters.find((c) => c.number === activeChapter) ?? null : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="relative min-h-screen flex flex-col bg-background text-foreground">
+      <AnimatedBackground />
       <TopNav />
-      <main className="flex-1 w-full">
+      <main className="flex-1 w-full relative z-10">
         {view === 'landing' && <LandingView />}
         {view === 'dashboard' && <DashboardView />}
         {view === 'syllabus' && <SyllabusView />}

@@ -50,37 +50,37 @@ export function DashboardView() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
       {/* Welcome */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-up">
+        <Card className="lg:col-span-2 glass border-gradient shadow-soft">
           <CardHeader>
-            <CardTitle className="text-2xl">
-              Welcome{username ? `, ${username}` : ' back'}!
+            <CardTitle className="text-3xl font-serif">
+              Welcome{username ? `, ${username}` : ' back'}! <span className="text-gradient-warm">👋</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground leading-relaxed">
               {hasActivity
                 ? `You have completed ${chaptersDone} of ${totalChapters} chapters and answered ${accuracy.attempted} practice questions so far. Keep going — small daily progress compounds before exams.`
                 : 'You are new here. Start with Chapter 1, or jump straight into a practice test to see where you stand.'}
             </p>
             <div className="flex flex-wrap gap-2">
               {nextChapter ? (
-                <Button onClick={() => go('chapter', { chapter: nextChapter.number })} className="gap-2">
+                <Button onClick={() => go('chapter', { chapter: nextChapter.number })} className="gap-2 shadow-soft hover:scale-[1.02] active:scale-95 transition-transform">
                   <Rocket className="h-4 w-4" />
                   Continue with Chapter {nextChapter.number}: {nextChapter.title}
                 </Button>
               ) : (
-                <Button onClick={() => go('syllabus')} className="gap-2">
+                <Button onClick={() => go('syllabus')} className="gap-2 shadow-soft">
                   <BookOpen className="h-4 w-4" /> Browse the Syllabus
                 </Button>
               )}
-              <Button variant="outline" onClick={() => go('practice')} className="gap-2">
+              <Button variant="outline" onClick={() => go('practice')} className="gap-2 glass hover:scale-[1.02] active:scale-95 transition-transform">
                 <PenLine className="h-4 w-4" /> Practice MCQs
               </Button>
-              <Button variant="outline" onClick={() => go('exam')} className="gap-2">
+              <Button variant="outline" onClick={() => go('exam')} className="gap-2 glass hover:scale-[1.02] active:scale-95 transition-transform">
                 <Target className="h-4 w-4" /> Take Mock Exam
               </Button>
-              <Button variant="ghost" onClick={() => go('flashcards')} className="gap-2">
+              <Button variant="ghost" onClick={() => go('flashcards')} className="gap-2 hover:scale-[1.02] active:scale-95 transition-transform">
                 <Brain className="h-4 w-4" /> Flashcards
               </Button>
             </div>
@@ -88,19 +88,19 @@ export function DashboardView() {
         </Card>
 
         {/* Streak */}
-        <Card>
+        <Card className="glass border-border/40 shadow-soft">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Flame className="h-4 w-4 text-orange-500" /> Daily streak
+            <CardTitle className="flex items-center gap-2 text-base font-serif">
+              <Flame className="h-4 w-4 text-orange-500 animate-pulse-glow rounded-full" /> Daily streak
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold">{progress.streak.current}</span>
-              <span className="text-muted-foreground">days in a row</span>
+              <span className="text-5xl font-bold font-serif text-gradient-warm">{progress.streak.current}</span>
+              <span className="text-muted-foreground text-sm">days in a row</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Longest streak: <strong>{progress.streak.longest}</strong> days. Answer at
+              Longest streak: <strong className="text-foreground">{progress.streak.longest}</strong> days. Answer at
               least one question a day to keep it alive.
             </p>
             <p className="text-xs text-muted-foreground">
@@ -142,10 +142,10 @@ export function DashboardView() {
 
       {/* Continue learning grid */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 glass border-border/40 shadow-soft">
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Recent activity</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => go('analytics')}>
+            <CardTitle className="font-serif">Recent activity</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => go('analytics')} className="hover:scale-105 transition-transform">
               View all
             </Button>
           </CardHeader>
@@ -162,7 +162,7 @@ export function DashboardView() {
                 {recentExams.map((e) => (
                   <div
                     key={e.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border p-3 hover:bg-muted/40 cursor-pointer"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border/40 glass p-3 hover:bg-muted/40 hover:shadow-soft hover:-translate-y-0.5 cursor-pointer transition-all"
                     onClick={() => go('exam-results', { examId: e.id })}
                   >
                     <div className="min-w-0">
@@ -175,6 +175,7 @@ export function DashboardView() {
                     </div>
                     <Badge
                       variant={e.percentage >= 70 ? 'default' : e.percentage >= 40 ? 'secondary' : 'destructive'}
+                      className="text-sm"
                     >
                       {e.percentage}%
                     </Badge>
@@ -186,10 +187,10 @@ export function DashboardView() {
         </Card>
 
         {/* Weak topics */}
-        <Card>
+        <Card className="glass border-border/40 shadow-soft">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Target className="h-4 w-4" /> Weakest topics
+            <CardTitle className="flex items-center gap-2 text-base font-serif">
+              <Target className="h-4 w-4 text-accent" /> Weakest topics
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -203,12 +204,13 @@ export function DashboardView() {
             ) : (
               <div className="space-y-2">
                 {weakTopics.slice(0, 6).map((t) => (
-                  <div key={t} className="flex items-center justify-between gap-2">
+                  <div key={t} className="flex items-center justify-between gap-2 rounded-lg border border-border/40 p-2 hover:bg-muted/40 transition-colors">
                     <span className="text-sm">{t}</span>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => go('practice', { mode: 'weak' })}
+                      className="hover:scale-105 transition-transform"
                     >
                       Practise
                     </Button>
@@ -225,7 +227,7 @@ export function DashboardView() {
 
       {/* Quick access cards */}
       <section>
-        <h2 className="text-xl font-bold mb-3">Quick access</h2>
+        <h2 className="text-xl font-bold mb-4 font-serif">Quick access</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           <QuickCard icon={BookOpen} title="Syllabus" body="40 chapters across 6 modules" onClick={() => go('syllabus')} />
           <QuickCard icon={PenLine} title="Practice" body="Topic, chapter, mixed and weak-topic modes" onClick={() => go('practice')} />
@@ -236,9 +238,9 @@ export function DashboardView() {
 
       {/* Danger zone */}
       <section>
-        <Card className="border-destructive/30">
+        <Card className="border-destructive/30 glass">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-destructive">
+            <CardTitle className="flex items-center gap-2 text-base text-destructive font-serif">
               <RefreshCcw className="h-4 w-4" /> Reset progress
             </CardTitle>
           </CardHeader>
@@ -275,13 +277,15 @@ function StatCard({
   progress?: number;
 }) {
   return (
-    <Card>
+    <Card className="glass border-border/40 shadow-soft hover:-translate-y-1 hover:shadow-lift transition-all duration-300">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">{label}</span>
-          <Icon className="h-4 w-4 text-muted-foreground" />
+          <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/15 to-accent/15 text-primary">
+            <Icon className="h-4 w-4" />
+          </div>
         </div>
-        <div className="mt-2 text-2xl font-bold">{value}</div>
+        <div className="mt-2 text-3xl font-bold font-serif">{value}</div>
         {hint && <div className="text-xs text-muted-foreground mt-1">{hint}</div>}
         {progress != null && (
           <Progress value={progress} className="mt-2 h-1.5" />
@@ -303,10 +307,15 @@ function QuickCard({
   onClick: () => void;
 }) {
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onClick}>
+    <Card
+      className="cursor-pointer glass border-gradient hover:shadow-lift hover:-translate-y-1 transition-all duration-300 group"
+      onClick={onClick}
+    >
       <CardHeader className="pb-2">
-        <Icon className="h-5 w-5 text-primary" />
-        <CardTitle className="text-base mt-2">{title}</CardTitle>
+        <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-soft transition-transform group-hover:scale-110 group-hover:rotate-3">
+          <Icon className="h-5 w-5" />
+        </div>
+        <CardTitle className="text-base mt-3 font-serif">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">{body}</p>
