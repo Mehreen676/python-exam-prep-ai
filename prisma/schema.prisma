@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// User accounts
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  hashedPassword String
+  role          String   @default("STUDENT") // STUDENT | ADMIN
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations — every record that belongs to this user
+  examResults       ExamResult[]
+  attempts          Attempt[]
+  chapterCompletions ChapterCompletion[]
+  flashcardStatuses FlashcardStatus[]
+
+  @@index([email])
+}
+
+// ---------------------------------------------------------------------------
+// Course progress — one row per chapter per user
+// ---------------------------------------------------------------------------
+
+model ChapterCompletion {
+  id           String   @id @default(cuid())
+  userId       String
+  chapterNumber Int
+  completed    Boolean  @default(false)
+  markedAt     DateTime?
+  slidesViewed Int      @default(0)
+  videosWatched Int     @default(0)
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterNumber])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// MCQ attempts — every answer the student has submitted
+// ---------------------------------------------------------------------------
+
+model Attempt {
+  id         String   @id @default(cuid())
+  userId     String
+  mcqId      String
+  chapter    Int
+  topic      String
+  difficulty String   // Easy | Medium | Hard
+  selected   Int
+  correct    Boolean
+  mode       String   // topic | chapter | mixed | weak | practice | exam
+  timestamp  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, chapter])
+  @@index([userId, topic])
+}
+
+// ---------------------------------------------------------------------------
+// Exam results — every completed mock exam
+// ---------------------------------------------------------------------------
+
+model ExamResult {
+  id               String   @id @default(cuid())
+  userId           String
+  startedAt        DateTime
+  finishedAt       DateTime
+  durationMinutes  Int
+  totalQuestions   Int
+  correct          Int
+  incorrect        Int
+  unanswered      Int
+  percentage       Int
+  // JSON-encoded details: per-question review (selected, correctIndex, markedForReview)
+  // and chapterPerformance: Record<chapterNumber, {correct, total}> and weakTopics: string[]
+  detailedJson    String
+  chapterPerfJson String
+  weakTopicsJson  String
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Flashcard revision status — one row per (user, cardId)
+// ---------------------------------------------------------------------------
+
+model FlashcardStatus {
+  id        String   @id @default(cuid())
+  userId    String
+  cardId    String
+  status    String   // know | review
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@index([userId])
+}
