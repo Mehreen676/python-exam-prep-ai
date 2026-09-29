@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -95,6 +95,7 @@ declare global {
 
 export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored' }: AdBannerProps) {
   const [adSensePushed, setAdSensePushed] = useState(false);
+  const monetagRef = useRef<HTMLDivElement>(null);
 
   // Trigger AdSense to render the ad unit after mount. Adsterra does not
   // need this — its `<script>` self-initialises.
@@ -113,6 +114,31 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
     });
     return () => cancelAnimationFrame(id);
   }, [adSensePushed]);
+
+  // For Monetag: programatically create and append the script element to
+  // the slot container. This is the ONLY reliable way to load an external
+  // script in React — `<script>` tags in JSX (React 19) are NOT executed,
+  // and scripts injected via innerHTML are also NOT executed (browser
+  // security feature). Using document.createElement('script') + appendChild
+  // forces the browser to actually fetch and execute the script.
+  useEffect(() => {
+    if (AD_NETWORK !== 'monetag') return;
+    const parsed = parseMonetagAd(MONETAG_ADS[slot]);
+    if (!parsed) return;
+    const container = monetagRef.current;
+    if (!container) return;
+    // Clear any previous script (for hot-reload safety)
+    container.innerHTML = '';
+    const script = document.createElement('script');
+    script.src = parsed.scriptUrl;
+    script.dataset.zone = parsed.zoneId;
+    script.setAttribute('data-cfasync', 'false');
+    script.async = true;
+    container.appendChild(script);
+    return () => {
+      if (container.contains(script)) container.removeChild(script);
+    };
+  }, [slot]);
 
   // No network configured — show a placeholder box so devs see the slot.
   if (AD_NETWORK === 'none' || (AD_NETWORK === 'adsense' && !ADSENSE_CLIENT)) {
@@ -195,14 +221,10 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
   }
 
   // ---- Monetag ----
-  // Renders Monetag's actual ad-serving script tag. Each slot has its own
-  // script URL + zone ID pair (Monetag assigns different CDN URLs per zone).
-  //
-  // IMPORTANT: We inject the script via dangerouslySetInnerHTML because
-  // React 19's special handling of <script> tags in JSX does NOT execute
-  // them on the client side. The script tag is added to the DOM but the
-  // browser doesn't fetch/run it. Injecting as raw HTML ensures the
-  // browser parses and executes the script normally.
+  // The actual script tag is created and appended in the useEffect above
+  // (using document.createElement('script') — the only reliable way to load
+  // external scripts in React). Here we just render the container that
+  // the script will be appended into.
   if (AD_NETWORK === 'monetag') {
     const parsed = parseMonetagAd(MONETAG_ADS[slot]);
     if (!parsed) {
@@ -216,16 +238,10 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
         </div>
       );
     }
-    // Build the exact same tag Monetag gives the user — same src, same
-    // data-zone, same data-cfasync="false", same async attribute.
-    const scriptHtml = `<script src="${parsed.scriptUrl}" data-zone="${parsed.zoneId}" data-cfasync="false" async></script>`;
     return (
       <div className={cn('flex flex-col gap-1', className)} role="complementary" aria-label="Advertisement">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60">{label}</div>
-        <div
-          className="monetag-slot min-h-[90px]"
-          dangerouslySetInnerHTML={{ __html: scriptHtml }}
-        />
+        <div ref={monetagRef} className="monetag-slot min-h-[90px]" />
       </div>
     );
   }
