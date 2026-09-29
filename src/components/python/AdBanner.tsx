@@ -197,6 +197,12 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
   // ---- Monetag ----
   // Renders Monetag's actual ad-serving script tag. Each slot has its own
   // script URL + zone ID pair (Monetag assigns different CDN URLs per zone).
+  //
+  // IMPORTANT: We inject the script via dangerouslySetInnerHTML because
+  // React 19's special handling of <script> tags in JSX does NOT execute
+  // them on the client side. The script tag is added to the DOM but the
+  // browser doesn't fetch/run it. Injecting as raw HTML ensures the
+  // browser parses and executes the script normally.
   if (AD_NETWORK === 'monetag') {
     const parsed = parseMonetagAd(MONETAG_ADS[slot]);
     if (!parsed) {
@@ -210,17 +216,16 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
         </div>
       );
     }
+    // Build the exact same tag Monetag gives the user — same src, same
+    // data-zone, same data-cfasync="false", same async attribute.
+    const scriptHtml = `<script src="${parsed.scriptUrl}" data-zone="${parsed.zoneId}" data-cfasync="false" async></script>`;
     return (
       <div className={cn('flex flex-col gap-1', className)} role="complementary" aria-label="Advertisement">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60">{label}</div>
-        <div className="monetag-slot min-h-[90px]">
-          <script
-            src={parsed.scriptUrl}
-            data-zone={parsed.zoneId}
-            data-cfasync="false"
-            async
-          />
-        </div>
+        <div
+          className="monetag-slot min-h-[90px]"
+          dangerouslySetInnerHTML={{ __html: scriptHtml }}
+        />
       </div>
     );
   }
