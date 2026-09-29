@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Script from 'next/script';
 import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -221,10 +222,10 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
   }
 
   // ---- Monetag ----
-  // The actual script tag is created and appended in the useEffect above
-  // (using document.createElement('script') — the only reliable way to load
-  // external scripts in React). Here we just render the container that
-  // the script will be appended into.
+  // Use next/script with strategy="afterInteractive" — this is Next.js's
+  // official way to load external scripts and ensures they actually
+  // execute (unlike raw <script> in JSX, which React 19 does not execute,
+  // or innerHTML injection, which browsers do not execute).
   if (AD_NETWORK === 'monetag') {
     const parsed = parseMonetagAd(MONETAG_ADS[slot]);
     if (!parsed) {
@@ -242,6 +243,13 @@ export function AdBanner({ slot, className, format = 'auto', label = 'Sponsored'
       <div className={cn('flex flex-col gap-1', className)} role="complementary" aria-label="Advertisement">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60">{label}</div>
         <div ref={monetagRef} className="monetag-slot min-h-[90px]" />
+        <Script
+          id={`monetag-${slot}`}
+          src={parsed.scriptUrl}
+          data-zone={parsed.zoneId}
+          data-cfasync="false"
+          strategy="afterInteractive"
+        />
       </div>
     );
   }
